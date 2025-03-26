@@ -1,77 +1,116 @@
-# App title and description
-TITLE = "YouTube Video Summarizer"
-DESCRIPTION = "Enter a YouTube video URL to get a summary of its content."
-INPUT_LABEL = "YouTube Video URL"
+# constants.py
 
-# Status messages
-STATUS_FETCHING_TRANSCRIPT = "Step 1/4: Retrieving video transcript..."
-STATUS_TRANSCRIPT_SUCCESS = "✅ Transcript retrieved successfully!"
-STATUS_GENERATING_SUMMARY = "Step 2/4: Generating summary..."
-STATUS_SUMMARY_SUCCESS = "✅ Summary generated successfully!"
-STATUS_EVALUATING = "Step 3/4: Running evaluation metrics..."
-STATUS_ALL_DONE = "✅ All automatic checks passed!"
-STATUS_WARNING = "⚠️ Some automatic checks did not pass. See metrics above for details."
+# --- UI Text: General App ---
+PAGE_TITLE = "Idea Recall"
+PAGE_ICON = "🎥"
+APP_TITLE = "🎥 Idea Recall: YouTube Summarizer & Evaluator"
+APP_SUBHEADER = "Enter a YouTube URL to fetch, summarize, and evaluate its transcript."
+URL_INPUT_LABEL = "YouTube Video URL"
+URL_PLACEHOLDER = "e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
-# Transcript info
-TRANSCRIPT_INFO = "Transcript length: {} characters"
+# --- UI Text: Results Section ---
+RESULTS_HEADER = "📊 Results"
+TRANSCRIPT_HEADER = "📜 Original Transcript"
+SUMMARY_HEADER = "📝 Generated Summary"
+EVALUATION_HEADER = "⚖️ Evaluation Metrics"
+VIEW_TRANSCRIPT_EXPANDER = "View Full Transcript"
+VIEW_SUMMARY_EXPANDER = "View Generated JSON Summary"
+VIEW_CRITIQUE_EXPANDER = "View AI Judge Critique"
+VIEW_DETAILS_EXPANDER = "View Raw Evaluation Data"
+LENGTH_LABEL = "Length: {:,} chars"
+TOKENS_LABEL = "Tokens: {:,}"
+GENERATION_TIME_LABEL = "Summary Generation Time"
 
-# Summary header
-SUMMARY_HEADER = "### Summary (Generated in {}s)"
+# --- UI Text: Evaluation Metrics ---
+METRICS_AUTO_HEADER = "🤖 Automatic Checks"
+METRICS_AI_HEADER = "🧑‍⚖️ AI Judge Evaluation"
+JSON_VALIDATION_LABEL = "JSON Structure"
+JSON_VALID_LABEL = "Valid"
+JSON_INVALID_LABEL = "Invalid"
+BERT_LABEL = "BERT Score (F1)"
+BERT_THRESHOLD_NOTE = "(Threshold ≥ 0.8)" # Ensure this matches BERT_SCORE_THRESHOLD
+AI_OVERALL_LABEL = "Overall Score"
+AI_RELEVANCE_LABEL = "Relevance Score"
+AI_FLUENCY_LABEL = "Fluency Score"
+SCORE_SUFFIX = "/ 100"
 
-# Metrics
-METRICS_HEADER = "Evaluation Metrics"
-DETAILED_METRICS_HEADER = "📊 Detailed Metrics"
-BERT_LABEL = "BERT Score"
-BERT_THRESHOLD = "(Threshold: 0.8)"
-GENERATION_TIME_LABEL = "Generation Time"
+# --- UI Text: Icons & Status Messages ---
+PASS_ICON = "✅"
+FAIL_ICON = "❌"
+WARN_ICON = "⚠️"
+INFO_ICON = "ℹ️"
+SUCCESS_MESSAGE = "All evaluation checks passed successfully!"
+WARNING_MESSAGE = "Some evaluation checks did not pass. Review the metrics."
+INFO_AI_JUDGE_SKIPPED = "AI Judge evaluation skipped due to failed automatic checks."
+INFO_AI_JUDGE_NO_RESULTS = "AI Judge ran, but no results were returned or parsed correctly." # More descriptive
 
-# Error messages
-ERROR_INVALID_URL = "Invalid YouTube URL. Please enter a valid YouTube video URL."
-ERROR_TRANSCRIPT_DISABLED = "This video has disabled transcripts."
-ERROR_NO_TRANSCRIPT = "No transcript found for this video."
-ERROR_FETCH_TRANSCRIPT = "Failed to get transcript: {}"
-ERROR_GENERATE_SUMMARY = "Failed to generate summary: {}"
-ERROR_EVALUATE_BERT = "BERT score evaluation failed: {}"
-ERROR_EVALUATION = "Evaluation failed: {}"
+# --- UI Text: Status Updates (for st.status) ---
+STATUS_IN_PROGRESS = "Processing video... buckle up!"
+STATUS_STEP_1 = "Step 1/4: Fetching transcript..."
+STATUS_STEP_1_COMPLETE = "Step 1/4: Transcript fetched ({:,} chars, {:,} tokens)."
+STATUS_STEP_2 = "Step 2/4: Generating summary..."
+STATUS_STEP_2_COMPLETE = "Step 2/4: Summary generated ({:.2f}s, {:,} chars, {:,} tokens)."
+STATUS_STEP_3 = "Step 3/4: Running automatic evaluation (JSON & BERT)..."
+STATUS_STEP_3_COMPLETE = "Step 3/4: Automatic evaluation complete."
+STATUS_STEP_4 = "Step 4/4: Running AI Judge evaluation..."
+STATUS_STEP_4_COMPLETE = "Step 4/4: AI Judge evaluation complete."
+STATUS_STEP_4_SKIPPED = "Step 4/4: AI Judge evaluation skipped (Auto checks failed)."
+STATUS_ALL_COMPLETE = "Processing complete!"
+STATUS_ERROR = "An error occurred: {}"
 
-# OpenAI Prompts
-SYSTEM_PROMPT_SUMMARY = "You are a helpful assistant that creates concise summaries of YouTube video transcripts in JSON format."
-USER_PROMPT_SUMMARY = """You are an expert at extracting actionable insights from educational content.
+# --- Error Messages ---
+ERROR_API_KEY_MISSING = "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
+ERROR_OPENAI_API = "OpenAI API error: {}"
+ERROR_INVALID_URL = "Invalid YouTube URL provided."
+ERROR_TRANSCRIPT_DISABLED = "Transcripts are disabled for this video."
+ERROR_NO_TRANSCRIPT = "No transcript found for this video. It might be unavailable or in an unsupported language."
+ERROR_FETCH_TRANSCRIPT = "Could not fetch transcript. Error: {}"
+ERROR_GENERATE_SUMMARY = "Could not generate summary. Error: {}"
+ERROR_EVALUATE_BERT = "BERT score evaluation failed. Error: {}" # Used by standalone BERT func if kept
+ERROR_UNKNOWN = "An unexpected error occurred: {}"
 
-The transcript of the video is below:
-'''
+# --- Prompts for OpenAI ---
+# Make sure these prompts align with your desired output format and model capabilities.
+# Using JSON mode where applicable simplifies things.
+
+SYSTEM_PROMPT_SUMMARY = """You are an expert assistant tasked with summarizing video transcripts.
+Generate a concise, informative summary focusing on the key topics, arguments, and conclusions presented in the transcript.
+The output MUST be a JSON object containing a single key "summary" with the summary text as its value.
+Example: {"summary": "The video discusses..."}"""
+
+USER_PROMPT_SUMMARY = """Please summarize the following transcript and provide the output strictly in the specified JSON format:
+
+Transcript:
+\"\"\"
 {}
-'''
+\"\"\""""
 
-Please analyze this content and provide:
-1. A summary of what the video is about, including most significant key points and themes and numbers or dates mentioned in the all video.
-2. Most relevant and useful insights from the video
+SYSTEM_PROMPT_COMBINE = """You will receive multiple summary sections, potentially from different parts of a video transcript.
+Combine these sections into a single, coherent, and concise summary.
+The final output MUST be a JSON object containing a single key "summary" with the combined summary text as its value.
+Example: {"summary": "This video covers topic A, explaining... It then moves on to topic B..."}"""
 
-Each insight MUST haveand be nicely formmated for telegram using emojies, bullet points, and bold text for the summary and insights:
-- name: Catchy, memorable title (max 60 chars)
-- subject: 1-2 word topic area (e.g., "Productivity", "Psychology", "Health")
-- overview: Concise explanation (100-200 words)
-- quote: 1-2 relevant quotes from the content
-- why it matters: Brief explanation of importance
-- how to apply: Practical steps for application
+USER_PROMPT_COMBINE = """Please combine the following summary sections into one cohesive JSON summary, following the specified format:
 
-Format your response as a valid JSON with the following structure:
-{{
-  "summary": "Concise summary of the video",
-  "ideas": [
-    {{
-      "title": "Clear title for insight 1",
-      "content": "Detailed explanation of insight 1",
-      "timestamp": "MM:SS",
-      "topic": "Category"
-    }},
-    ...
-  ]
-}}
+Sections:
+\"\"\"
+{}
+\"\"\""""
 
-Be sure your response is ONLY valid JSON with no additional text or explanations before or after."""
-SYSTEM_PROMPT_COMBINE = "You are a helpful assistant that combines summaries into one coherent JSON summary."
-USER_PROMPT_COMBINE = "Please combine these summaries into one coherent JSON summary:\n\n{}"
+SYSTEM_PROMPT_AI_JUDGE = """You are an expert evaluator assessing the quality of a video transcript summary.
+Analyze the provided summary and evaluate it based on Overall Quality, Relevance (to an assumed source transcript), and Fluency/Readability.
+Provide scores from 0 to 100 for each category and a brief critique.
+Your response MUST be a JSON object with the keys "overall_score", "relevance_score", "fluency_score", and "critique".
+Example: {"overall_score": 85, "relevance_score": 90, "fluency_score": 80, "critique": "Good summary, covers main points well. Could be slightly more concise."}"""
 
-# Evaluation thresholds
-BERT_THRESHOLD_VALUE = 0.8
+USER_PROMPT_AI_JUDGE = """Please evaluate the following summary based on the criteria (Overall Quality, Relevance, Fluency). Provide your evaluation strictly in the specified JSON format.
+
+Summary to Evaluate:
+```json
+{}
+```"""
+
+
+# --- Numerical Thresholds ---
+BERT_SCORE_THRESHOLD = 0.8
+AI_JUDGE_THRESHOLD = 80 # Threshold for individual AI judge scores to be considered "passing"
