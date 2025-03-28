@@ -148,15 +148,30 @@ Example Format:
 }
 """
 
-SYSTEM_PROMPT_GENERATION = f"""You are an expert assistant analyzing video transcripts to create learning aids. Generate:
-1. A **detailed and comprehensive summary** reflecting the transcript's content accurately. Capture **all key topics, arguments, comparisons (e.g., vs previous models, vs '01'), specific examples, capabilities, limitations (cost, reasoning types), evaluation methods mentioned (e.g., 'vibes testing'), and future outlooks**. Use precise language and **reflect key terminology** from the transcript. **Ignore irrelevant content** (ads, music cues).
-2. A set of **flashcards** (typically 5-12) covering **distinct main points** from the summarized content. Questions should test understanding of core concepts, definitions, comparisons, and takeaways, balancing difficulty.
+SYSTEM_PROMPT_GENERATION = f"""You are an expert content analyzer that extracts ALL distinct ideas from content.
+For videos with numbered tips or steps, you MUST create a separate idea for each tip/step.
+ALWAYS respond with valid JSON matching the exact structure specified.
+Each idea MUST have:
+- Catchy, memorable title (max 60 chars)
+- overview: Concise explanation (100-200 words)
+- quote: 1-2 relevant quotes from the content
+- why_it_matters: Brief explanation of importance
+- how_to_apply: Practical steps for application
+
+2.  A set of **flashcards** (5-10) covering distinct main points from the transcript. Questions should test understanding of core concepts.
 
 {OUTPUT_JSON_STRUCTURE_DESCRIPTION}
-Adhere STRICTLY to the JSON format.
+Adhere STRICTLY to the JSON format. Focus the summary on transcript fidelity.
 """
 
-USER_PROMPT_GENERATION = """Generate the summary and flashcards based on the following transcript, adhering strictly to the specified JSON format:
+USER_PROMPT_GENERATION = """Please analyze this content and provide:
+1. A summary of what the video is about that includes all key ideas and concepts mentioned in the video with actionable insights and quotes.
+2. 5-10 meaningful flashcards 
+
+For each insight, include:
+- A clear, specific title for the insight
+- The content of the insight explained in details with quotes and examples
+- adhere strictly to the JSON format:
 Transcript:
 \"\"\"
 {}
